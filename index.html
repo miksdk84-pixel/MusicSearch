@@ -11,33 +11,39 @@
     </style>
 </head>
 <body class="p-4 pb-20">
-    <div class="max-w-xl mx-auto">
-        <header class="py-8 text-center text-rose-500 text-4xl font-black italic tracking-tighter">MUSIC STREAM</header>
+    <div class="max-w-xl mx-auto text-center">
+        <header class="py-8 text-rose-500 text-4xl font-black italic tracking-tighter uppercase">Music Stream</header>
 
         <div class="sticky top-4 z-50 mb-6">
-            <input type="text" id="search" placeholder="Søg i over 10.000 sange..." 
+            <input type="text" id="search" placeholder="Søg i din samling..." 
             class="w-full p-5 rounded-3xl glass outline-none shadow-2xl focus:ring-2 ring-rose-500/50 text-lg transition-all text-white">
         </div>
 
-        <div id="results" class="grid gap-3">
-            <div class="text-center py-10 text-gray-500 italic font-bold">Henter musiksamling...</div>
-        </div>
+        <div id="status" class="text-xs text-gray-500 mb-4"></div>
+        <div id="results" class="grid gap-3"></div>
     </div>
 
     <script>
         let sange = [];
-        
-        // Henter musik.json
-        fetch('musik.json')
-            .then(res => res.json())
+        const statusDiv = document.getElementById('status');
+        const resultsDiv = document.getElementById('results');
+
+        // Forsøger at hente filen med en "cache-buster" for at sikre vi ser nyeste version
+        fetch('./musik.json?v=' + Date.now())
+            .then(res => {
+                if (!res.ok) throw new Error('Filen blev ikke fundet');
+                return res.json();
+            })
             .then(data => {
-                // Sørger for at vi finder listen uanset format
                 sange = Array.isArray(data) ? data : (data.data || Object.values(data)[0]);
-                console.log("Systemet fandt " + sange.length + " sange.");
+                statusDiv.innerText = "DATABASE KLAR: " + sange.length + " SANGE";
                 render(sange.slice(0, 50));
             })
             .catch(err => {
-                document.getElementById('results').innerHTML = "Fejl: Kunne ikke læse musik.json";
+                resultsDiv.innerHTML = `<div class="p-5 glass rounded-2xl text-red-400 font-bold">
+                    FEJL: Kan ikke finde 'musik.json'<br>
+                    <span class="text-xs text-gray-500 font-normal">Tjek at filen på GitHub hedder præcis musik.json (små bogstaver)</span>
+                </div>`;
             });
 
         document.getElementById('search').addEventListener('input', (e) => {
@@ -45,7 +51,6 @@
             if (query.length < 2) { render(sange.slice(0, 50)); return; }
 
             const filtered = sange.filter(s => {
-                // Søger i alle kolonner (Artist, Title, osv.)
                 return Object.values(s).some(val => String(val).toLowerCase().includes(query));
             }).slice(0, 100);
 
@@ -53,22 +58,19 @@
         });
 
         function render(list) {
-            const resultsDiv = document.getElementById('results');
             if (!list || list.length === 0) { 
-                resultsDiv.innerHTML = "<div class='text-center py-10 text-gray-500 italic'>Ingen sange fundet...</div>"; 
+                resultsDiv.innerHTML = "<div class='italic text-gray-500 mt-10'>Ingen sange fundet...</div>"; 
                 return; 
             }
-            
             resultsDiv.innerHTML = list.map(s => {
-                // Her finder vi felterne uanset om de hedder "Artist" eller "field1"
                 const keys = Object.keys(s);
                 const t = s.Title || s.title || s.Titel || s[keys[1]] || "Ukendt titel";
                 const a = s.Artist || s.artist || s[keys[0]] || "Ukendt kunstner";
                 const k = s.Key || s.key || s[keys[2]] || "";
 
                 return `
-                    <div class="p-5 rounded-2xl glass flex items-center gap-4 text-left animate-in fade-in duration-300">
-                        <div class="w-12 h-12 rounded-xl bg-gray-800 flex items-center justify-center text-rose-400 font-bold text-xs shadow-inner">
+                    <div class="p-5 rounded-2xl glass flex items-center gap-4 text-left border border-white/5">
+                        <div class="w-12 h-12 rounded-xl bg-gray-800 flex items-center justify-center text-rose-400 font-bold text-[10px] shadow-inner border border-white/10">
                             ${k}
                         </div>
                         <div class="flex-1 overflow-hidden">
