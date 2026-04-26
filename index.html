@@ -11,39 +11,31 @@
     </style>
 </head>
 <body class="p-4 pb-20">
-    <div class="max-w-xl mx-auto text-center">
-        <header class="py-8 text-rose-500 text-4xl font-black italic tracking-tighter uppercase">Music Stream</header>
+    <div class="max-w-xl mx-auto">
+        <header class="py-8 text-center text-rose-500 text-4xl font-black italic tracking-tighter">MUSIC STREAM</header>
 
         <div class="sticky top-4 z-50 mb-6">
-            <input type="text" id="search" placeholder="Søg i din samling..." 
-            class="w-full p-5 rounded-3xl glass outline-none shadow-2xl focus:ring-2 ring-rose-500/50 text-lg transition-all text-white">
+            <input type="text" id="search" placeholder="Søg i sange eller kunstnere..." 
+            class="w-full p-5 rounded-3xl glass outline-none shadow-2xl focus:ring-2 ring-rose-500/50 text-lg transition-all">
         </div>
 
-        <div id="status" class="text-xs text-gray-500 mb-4"></div>
-        <div id="results" class="grid gap-3"></div>
+        <div id="results" class="grid gap-3 text-center py-10 text-gray-500 italic">Henter musikken...</div>
     </div>
 
     <script>
         let sange = [];
-        const statusDiv = document.getElementById('status');
-        const resultsDiv = document.getElementById('results');
-
-        // Forsøger at hente filen med en "cache-buster" for at sikre vi ser nyeste version
-        fetch('./musik.json?v=' + Date.now())
-            .then(res => {
-                if (!res.ok) throw new Error('Filen blev ikke fundet');
-                return res.json();
-            })
+        
+        // Vi henter filen. Tjek at den hedder musik.json på GitHub!
+        fetch('musik.json')
+            .then(res => res.json())
             .then(data => {
+                // Håndterer hvis TableConvert har lagt data i en under-mappe
                 sange = Array.isArray(data) ? data : (data.data || Object.values(data)[0]);
-                statusDiv.innerText = "DATABASE KLAR: " + sange.length + " SANGE";
+                console.log("Sange hentet:", sange.length);
                 render(sange.slice(0, 50));
             })
             .catch(err => {
-                resultsDiv.innerHTML = `<div class="p-5 glass rounded-2xl text-red-400 font-bold">
-                    FEJL: Kan ikke finde 'musik.json'<br>
-                    <span class="text-xs text-gray-500 font-normal">Tjek at filen på GitHub hedder præcis musik.json (små bogstaver)</span>
-                </div>`;
+                document.getElementById('results').innerHTML = "Kunne ikke finde musik.json. Tjek filnavnet på GitHub!";
             });
 
         document.getElementById('search').addEventListener('input', (e) => {
@@ -58,24 +50,24 @@
         });
 
         function render(list) {
-            if (!list || list.length === 0) { 
-                resultsDiv.innerHTML = "<div class='italic text-gray-500 mt-10'>Ingen sange fundet...</div>"; 
-                return; 
-            }
+            const resultsDiv = document.getElementById('results');
+            if (!list || list.length === 0) { resultsDiv.innerHTML = "Ingen sange fundet..."; return; }
+            
             resultsDiv.innerHTML = list.map(s => {
+                // Vi finder de rigtige felter automatisk
                 const keys = Object.keys(s);
-                const t = s.Title || s.title || s.Titel || s[keys[1]] || "Ukendt titel";
-                const a = s.Artist || s.artist || s[keys[0]] || "Ukendt kunstner";
-                const k = s.Key || s.key || s[keys[2]] || "";
+                const val1 = s.Title || s.title || s[keys[1]] || "Ukendt";
+                const val2 = s.Artist || s.artist || s[keys[0]] || "Ukendt";
+                const val3 = s.Key || s.key || s[keys[2]] || "";
 
                 return `
-                    <div class="p-5 rounded-2xl glass flex items-center gap-4 text-left border border-white/5">
-                        <div class="w-12 h-12 rounded-xl bg-gray-800 flex items-center justify-center text-rose-400 font-bold text-[10px] shadow-inner border border-white/10">
-                            ${k}
+                    <div class="p-5 rounded-2xl glass flex items-center gap-4 text-left">
+                        <div class="w-12 h-12 rounded-xl bg-gray-800 flex items-center justify-center text-rose-400 font-bold text-xs shadow-inner">
+                            ${val3}
                         </div>
                         <div class="flex-1 overflow-hidden">
-                            <div class="font-bold text-white truncate text-lg">${t}</div>
-                            <div class="text-sm text-gray-400 truncate">${a}</div>
+                            <div class="font-bold text-white truncate text-lg">${val1}</div>
+                            <div class="text-sm text-gray-400 truncate">${val2}</div>
                         </div>
                     </div>
                 `;
