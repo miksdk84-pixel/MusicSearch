@@ -7,22 +7,23 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Sort baggrund med Mlogo.png som synlig baggrund */
         body { 
-            background-color: #0b0114;
-            background-image: url('Mlogo.jpg');
+            background-color: #000000;
+            /* Vi bruger en lidt lysere gradient (0.5 i stedet for 0.7), så logoet ses tydeligere */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('Mlogo.png');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            background-blend-mode: overlay;
-            color: #fce7f3;
+            color: #ffffff;
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
         }
         
         .glass { 
-            background: rgba(11, 1, 20, 0.75);
-            backdrop-filter: blur(15px); 
-            border: 1px solid rgba(236, 72, 153, 0.2);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(236, 72, 153, 0.25);
         }
 
         .neon-text {
@@ -30,29 +31,27 @@
             text-shadow: 0 0 15px rgba(236, 72, 153, 0.8);
         }
 
-        /* Styling til forslag-listen */
         #suggestions {
             position: absolute;
             width: 100%;
             z-index: 100;
-            background: rgba(20, 1, 35, 0.95);
-            border: 1px solid rgba(236, 72, 153, 0.4);
+            background: rgba(10, 10, 10, 0.98);
+            border: 1px solid rgba(236, 72, 153, 0.5);
             border-radius: 1rem;
-            margin-top: 0.5rem;
+            margin-top: 5px;
             max-height: 250px;
             overflow-y: auto;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
 
         .suggestion-item {
             padding: 1rem;
             cursor: pointer;
             border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.2s;
+            font-weight: 600;
         }
 
         .suggestion-item:hover {
-            background: rgba(236, 72, 153, 0.2);
+            background: rgba(236, 72, 153, 0.3);
             color: #ec4899;
         }
 
@@ -63,17 +62,17 @@
 <body class="p-4 pb-20">
     <div class="max-w-xl mx-auto">
         
-        <header class="py-10 text-center">
-            <h1 class="text-6xl font-black italic tracking-tighter uppercase neon-text">MIKS</h1>
-            <div id="status" class="text-[10px] text-orange-400 mt-2 tracking-[0.3em] font-bold uppercase opacity-60">Database Booting...</div>
+        <header class="py-12 text-center">
+            <h1 class="text-7xl font-black italic tracking-tighter uppercase neon-text">MIKS</h1>
+            <div id="status" class="text-[9px] text-orange-500 mt-2 tracking-[0.4em] font-bold uppercase opacity-80 text-shadow">AI Engine Loaded</div>
         </header>
 
         <div class="relative mb-10">
             <div class="relative group">
-                <input type="text" id="search" placeholder="Søg kunstner eller sang..." 
+                <input type="text" id="search" placeholder="Søg kunstner..." 
                 autocomplete="off"
-                class="relative w-full p-6 rounded-3xl glass outline-none text-xl transition-all text-white placeholder:text-gray-600 border border-ec4899/20 focus:ring-2 ring-ec4899/30">
-                <i class="fas fa-bolt absolute right-6 top-1/2 -translate-y-1/2 text-orange-500"></i>
+                class="relative w-full p-6 rounded-2xl glass outline-none text-xl transition-all text-white placeholder:text-gray-700 border border-white/10 focus:border-pink-500">
+                <i class="fas fa-search absolute right-6 top-1/2 -translate-y-1/2 text-orange-500"></i>
             </div>
             <div id="suggestions" class="hidden"></div>
         </div>
@@ -85,7 +84,6 @@
         let sange = [];
         let kunstnere = [];
 
-        // Hent databasen
         fetch('./musik.json')
             .then(res => res.text())
             .then(data => {
@@ -96,8 +94,7 @@
                         const parts = line.split('\t');
                         let rawTitle = parts[0] || "Ukendt";
                         let cleanTitle = rawTitle.replace('.mp3', '').split('/').pop();
-                        // Find kunstner-mappe (antager parts[3] er stien)
-                        let folderName = parts[3] ? parts[3].split('/').slice(-1)[0] : "Diverse";
+                        let folderName = parts[3] ? parts[3].split('/').filter(Boolean).pop() : "Samling";
                         
                         return {
                             title: cleanTitle,
@@ -107,11 +104,9 @@
                         };
                     });
 
-                // Lav en unik liste over alle kunstnere til forslag
-                kunstnere = [...new Set(sange.map(s => s.artist))].sort();
-
-                document.getElementById('status').innerText = sange.length + " TRACKS READY";
-                render(sange.slice(0, 10)); // Vis lidt til en start
+                 kunstnere = [...new Set(sange.map(s => s.artist))].sort();
+                 document.getElementById('status').innerText = sange.length + " TRACKS READY";
+                 render(sange.slice(0, 15));
             });
 
         const searchInput = document.getElementById('search');
@@ -121,11 +116,10 @@
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
             
-            // 1. Håndter Autocomplete forslag
             if (query.length >= 1) {
-                const matches = kunstnere.filter(k => k.toLowerCase().startsWith(query)).slice(0, 10);
+                const matches = kunstnere.filter(k => k.toLowerCase().includes(query)).slice(0, 10);
                 if (matches.length > 0) {
-                    suggestionsDiv.innerHTML = matches.map(m => `<div class="suggestion-item font-bold">${m}</div>`).join('');
+                    suggestionsDiv.innerHTML = matches.map(m => `<div class="suggestion-item">${m}</div>`).join('');
                     suggestionsDiv.classList.remove('hidden');
                 } else {
                     suggestionsDiv.classList.add('hidden');
@@ -134,7 +128,6 @@
                 suggestionsDiv.classList.add('hidden');
             }
 
-            // 2. Vis resultater med det samme
             const filtered = sange.filter(s => 
                 s.title.toLowerCase().includes(query) || 
                 s.artist.toLowerCase().includes(query)
@@ -142,38 +135,30 @@
             render(filtered);
         });
 
-        // Klik på et forslag
         suggestionsDiv.addEventListener('click', (e) => {
             if (e.target.classList.contains('suggestion-item')) {
-                const artistName = e.target.innerText;
-                searchInput.value = artistName;
+                const name = e.target.innerText;
+                searchInput.value = name;
                 suggestionsDiv.classList.add('hidden');
-                
-                const filtered = sange.filter(s => s.artist === artistName);
-                render(filtered);
+                render(sange.filter(s => s.artist === name));
             }
         });
 
-        // Skjul forslag hvis man klikker udenfor
         document.addEventListener('click', (e) => {
             if (e.target !== searchInput) suggestionsDiv.classList.add('hidden');
         });
 
         function render(list) {
-            if (list.length === 0) { 
-                resultsDiv.innerHTML = "<div class='text-center py-20 opacity-30'>Intet fundet...</div>"; 
-                return; 
-            }
             resultsDiv.innerHTML = list.map(s => `
-                <div class="p-4 rounded-2xl glass flex items-center gap-4 border border-white/5 group active:scale-95 transition-all">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-900 to-black flex items-center justify-center text-orange-500 font-mono text-[10px] font-bold border border-pink-500/20">
+                <div class="p-5 rounded-2xl glass flex items-center gap-5 border border-white/5 active:scale-95 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-black flex flex-col items-center justify-center text-orange-500 font-mono text-[10px] font-bold border border-white/10 group-hover:border-pink-500/50">
                         ${s.key || '♫'}
                     </div>
                     <div class="flex-1 overflow-hidden">
-                        <div class="font-bold text-white truncate group-hover:text-pink-500 transition-colors">${s.title}</div>
-                        <div class="text-xs text-gray-400 truncate opacity-80">${s.artist} • ${s.genre}</div>
+                        <div class="font-bold text-white truncate text-lg group-hover:text-pink-500 transition-colors">${s.title}</div>
+                        <div class="text-[11px] text-gray-500 truncate uppercase tracking-widest">${s.artist}</div>
                     </div>
-                    <i class="fas fa-chevron-right text-gray-700 group-hover:text-orange-500"></i>
+                    <i class="fas fa-play text-[10px] text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                 </div>
             `).join('');
         }
