@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miks Musik AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0b0f19; color: #e2e8f0; font-family: sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="p-4 pb-20">
+    <div class="max-w-xl mx-auto">
+        <header class="py-8 text-center text-rose-500 text-4xl font-black italic tracking-tighter">MUSIC STREAM</header>
+
+        <div class="sticky top-4 z-50 mb-6">
+            <input type="text" id="search" placeholder="Søg i 10.000 sange..." 
+            class="w-full p-5 rounded-3xl glass outline-none shadow-2xl focus:ring-2 ring-rose-500/50 text-lg transition-all">
+        </div>
+
+        <div id="results" class="grid gap-3 italic text-gray-500 text-center py-10">Henter din musiksamling...</div>
+    </div>
+
+    <script>
+        let sange = [];
+        
+        // Vi henter din musik.json fil
+        fetch('musik.json')
+            .then(res => res.json())
+            .then(data => {
+                sange = Array.isArray(data) ? data : data.data || [];
+                render(sange.slice(0, 50));
+            })
+            .catch(err => {
+                document.getElementById('results').innerHTML = "Fejl: Kunne ikke finde musik.json";
+            });
+
+        const searchInput = document.getElementById('search');
+        const resultsDiv = document.getElementById('results');
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            if (query.length < 2) { render(sange.slice(0, 50)); return; }
+
+            const filtered = sange.filter(s => 
+                (s.Title && s.Title.toLowerCase().includes(query)) || 
+                (s.Artist && s.Artist.toLowerCase().includes(query))
+            ).slice(0, 100);
+
+            render(filtered);
+        });
+
+        function render(list) {
+            if (list.length === 0) { resultsDiv.innerHTML = "Ingen sange fundet..."; return; }
+            resultsDiv.innerHTML = list.map(s => `
+                <div class="p-5 rounded-2xl glass flex items-center gap-4 text-left">
+                    <div class="w-12 h-12 rounded-xl bg-gray-800 flex items-center justify-center text-rose-400 font-bold text-xs shadow-inner">
+                        ${s.Key || '?'}
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="font-bold text-white truncate text-lg">${s.Title || 'Ukendt'}</div>
+                        <div class="text-sm text-gray-400 truncate">${s.Artist || ''} ${s.BPM ? '• ' + s.BPM + ' BPM' : ''}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>                                                                                                                              2
